@@ -1,9 +1,3 @@
 pub mod event_queue;
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(1 + 1, 2)
-    }
-}
+pub use event_queue::{ EventQueue, EventQueueError, EventQueueResult, ServiceEvent };
