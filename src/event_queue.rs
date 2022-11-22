@@ -8,7 +8,7 @@ use redis::Commands;
 pub use service_event::ServiceEvent;
 
 #[derive(Debug, PartialEq)]
-pub enum InterfaceError {
+pub enum EventQueueError {
     ConnectionError(String),
     JSONDumpError(String),
     JSONParseError(String),
@@ -18,7 +18,7 @@ pub enum InterfaceError {
     TimeoutExpired
 }
 
-pub type InterfaceResult<T> = Result<T, InterfaceError>;
+pub type EventQueueResult<T> = Result<T, EventQueueError>;
 
 #[derive(Debug, PartialEq)]
 pub struct TimestampedEvent(u64, ServiceEvent);
@@ -33,18 +33,18 @@ impl TimestampedEvent {
     }
 }
 
-pub struct ServiceInterface {
+pub struct EventQueue {
     redis_client: redis::Client,
     queue_name: String,
     stream_name: String
 }
 
-impl ServiceInterface {
+impl EventQueue {
     pub fn new(queue_name: &str, connection_url: &str) -> Self {
         let redis_client = redis::Client::open(connection_url).unwrap();
         let stream_name = std::fmt::format(format_args!("stream{}", queue_name));
 
-        ServiceInterface {
+        EventQueue {
             redis_client,
             queue_name: String::from(queue_name),
             stream_name
@@ -64,52 +64,52 @@ impl ServiceInterface {
         timestamp.parse::<u64>().unwrap()
     }
 
-    fn setup_connection(&self) -> InterfaceResult<redis::Connection> {
+    fn setup_connection(&self) -> EventQueueResult<redis::Connection> {
         let connection = self.redis_client.get_connection();
 
         match connection {
-            Err(error) => Err(InterfaceError::ConnectionError(error.to_string())),
+            Err(error) => Err(EventQueueError::ConnectionError(error.to_string())),
             Ok(connection) => Ok(connection)
         }
     }
 
-    fn get_service_event_by_key(&self, connection: &mut redis::Connection, event_key: &str) -> InterfaceResult<ServiceEvent> {
+    fn get_service_event_by_key(&self, connection: &mut redis::Connection, event_key: &str) -> EventQueueResult<ServiceEvent> {
         let event_data_list: Vec<HashMap<String, HashMap<String, String>>> = match connection.xrange_count(
             &self.stream_name,
             &event_key,
             &event_key,
             1
         ) {
-            Err(error) => return Err(InterfaceError::DequeueError(error.to_string())),
+            Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
             Ok(data) => data
         };
 
         let event_data = match event_data_list.into_iter().next() {
-            None => return Err(InterfaceError::DequeueError(String::from("unexpected empty value in stream"))),
+            None => return Err(EventQueueError::DequeueError(String::from("unexpected empty value in stream"))),
             Some(event_data) => event_data
         };
 
         let event = match event_data.get(event_key) {
-            None => return Err(InterfaceError::DequeueError(String::from("expected event map, found None"))),
+            None => return Err(EventQueueError::DequeueError(String::from("expected event map, found None"))),
             Some(event) => match event.get("event") {
-                None => return Err(InterfaceError::DequeueError(String::from("expected event at key \"event\", found None"))),
+                None => return Err(EventQueueError::DequeueError(String::from("expected event at key \"event\", found None"))),
                 Some(event) => event
             }
         };
 
         let event: ServiceEvent = match serde_json::from_str(&event) {
-            Err(error) => return Err(InterfaceError::JSONParseError(error.to_string())),
+            Err(error) => return Err(EventQueueError::JSONParseError(error.to_string())),
             Ok(event) => event
         };
 
         Ok(event)
     }
 
-    pub fn enqueue(&mut self, event: &ServiceEvent) -> InterfaceResult<()> {
+    pub fn enqueue(&mut self, event: &ServiceEvent) -> EventQueueResult<()> {
         let mut connection = self.setup_connection()?;
 
         let event_as_json = match serde_json::to_string(&event) {
-            Err(error) => return Err(InterfaceError::JSONDumpError(error.to_string())),
+            Err(error) => return Err(EventQueueError::JSONDumpError(error.to_string())),
             Ok(json) => json
         };
 
@@ -118,7 +118,7 @@ impl ServiceInterface {
             "*",
             &[("event", &event_as_json)]
         ) {
-            Err(error) => return Err(InterfaceError::EnqueueError(error.to_string())),
+            Err(error) => return Err(EventQueueError::EnqueueError(error.to_string())),
             Ok(key) => key
         };
 
@@ -126,19 +126,19 @@ impl ServiceInterface {
             &self.queue_name,
             &event_key
         ) {
-            return Err(InterfaceError::EnqueueError(error.to_string()));
+            return Err(EventQueueError::EnqueueError(error.to_string()));
         }
 
         Ok(())
     }
 
-    pub fn dequeue(&mut self) -> InterfaceResult<TimestampedEvent> {
+    pub fn dequeue(&mut self) -> EventQueueResult<TimestampedEvent> {
         let mut connection = self.setup_connection()?;
 
         let event_key: String = match connection.rpop(&self.queue_name, None) {
-            Err(error) => return Err(InterfaceError::DequeueError(error.to_string())),
+            Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
             Ok(key) => match key {
-                None => return Err(InterfaceError::EmptyQueue),
+                None => return Err(EventQueueError::EmptyQueue),
                 Some(key) => key
             }
         };
@@ -149,16 +149,16 @@ impl ServiceInterface {
         Ok(TimestampedEvent(timestamp, event))
     }
 
-    pub fn dequeue_blocking(&mut self, timeout: u16) -> InterfaceResult<TimestampedEvent> {
+    pub fn dequeue_blocking(&mut self, timeout: u16) -> EventQueueResult<TimestampedEvent> {
         let mut connection = self.setup_connection()?;
 
         let event_kvp: (String, String) = match connection.brpop(
             &self.queue_name, 
             timeout.into()
         ) {
-            Err(error) => return Err(InterfaceError::DequeueError(error.to_string())),
+            Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
             Ok(key) => match key {
-                None => return Err(InterfaceError::EmptyQueue),
+                None => return Err(EventQueueError::EmptyQueue),
                 Some(kvp) => kvp
             }
         };
@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn create_ok() {
-        let interface = ServiceInterface::new(
+        let interface = EventQueue::new(
             "test_queue",
             "redis://127.0.0.1"
         );
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn enqueue_dequeue_ok() {
-        let mut interface = ServiceInterface::new(
+        let mut interface = EventQueue::new(
             "test_event_enqueue_dequeue",
             "redis://127.0.0.1"
         );
@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn dequeue_blocking_ok() {
-        let mut interface = ServiceInterface::new(
+        let mut interface = EventQueue::new(
             "test_event_dequeue_blocking",
             "redis://127.0.0.1"
         );
@@ -226,7 +226,7 @@ mod tests {
         let handle = thread::spawn(move || {
             thread::sleep(Duration::from_millis(1000));
 
-            let mut local_interface = ServiceInterface::new(
+            let mut local_interface = EventQueue::new(
                 "test_event_dequeue_blocking",
                 "redis://127.0.0.1"
             );

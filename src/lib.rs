@@ -1,4 +1,4 @@
-pub mod service_interface;
+pub mod event_queue;
 
 #[cfg(test)]
 mod tests {

@@ -27,7 +27,7 @@ impl ServiceEvent {
     /// 
     /// Example:
     /// ```
-    /// use common_service_interface::service_interface::ServiceEvent;
+    /// use common_service_interface::event_queue::ServiceEvent;
     /// 
     /// let event = ServiceEvent::new(10, "my_event", Some("{ \"foo\": \"bar\" }".to_string()));
     /// ```
