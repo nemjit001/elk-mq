@@ -1,3 +1,3 @@
 pub mod event_queue;
 
-pub use event_queue::{ EventQueue, EventQueueError, EventQueueResult, ServiceEvent };
+pub use event_queue::{ EventQueue, EventQueueError, EventQueueResult, ServiceEvent, TimestampedEvent };
