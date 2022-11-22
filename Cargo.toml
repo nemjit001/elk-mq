@@ -9,6 +9,9 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-redis = { version="0.22.1" }
-
-uuid = { version="1.2.2", features=[ "v4" ] }
+redis = { version="0.22" }
+serde = { version="1.0", features=[ "derive" ] }
+serde_json = { version="1.0" }
+uuid = { version="1.2", features=[ "v4" ] }
+regex = { version="1.7" }
+lazy_static = { version="1.4" }
