@@ -52,8 +52,10 @@ impl ServiceEvent {
     /// 
     /// A response reuses the event uuid to identify it. Other than reusing a uuid, this functions acts the same as `ServiceEvent::new()`
     ///  
-    pub fn new_response(event: &ServiceEvent, timeout: u16, action: &str, payload: Option<String>) -> Self {
-        let mut new_event = ServiceEvent::new(timeout, action, payload);
+    pub fn new_response(event: &ServiceEvent, action: &str, payload: Option<String>) -> Self {
+        let mut new_event = ServiceEvent::new(event.timeout, action, payload);
+
+        // take over old uuid
         new_event.request_uuid = event.request_uuid;
 
         new_event
@@ -106,7 +108,6 @@ mod tests {
 
         let event_b = ServiceEvent::new_response(
             &event_a,
-            10,
             "test_event_response",
             None
         );
