@@ -214,8 +214,6 @@ impl EventQueue {
             Ok(key) => key
         };
 
-        println!("enqueueing ({}, {})", uuid_string, response_key);
-
         if let Err(error) = connection.xadd::<_, _, _, _, ()>(&self.response_stream_name, "*", &[(&uuid_string, &response_key)]) {
             return Err(EventQueueError::EnqueueError(error.to_string()));
         }
@@ -413,8 +411,6 @@ mod tests {
         );
 
         let join_handle = thread::spawn(|| {
-            thread::sleep(time::Duration::from_secs(2));
-
             let mut thread_interface = EventQueue::new(
                 "test_event_await",
                 "redis://127.0.0.1"
@@ -439,6 +435,67 @@ mod tests {
         assert_eq!(response.get_action(), "await_response");
         assert_eq!(response.get_payload(), Some(String::from("pong")));
         assert_eq!(response.get_uuid(), event.get_uuid());
+    }
+
+    #[test]
+    fn simultaneous_await_ok() {
+        let mut interface = EventQueue::new(
+            "test_event_await_sim",
+            "redis://127.0.0.1"
+        );
+
+        let answer_thread = thread::spawn(|| {
+            let mut thread_interface = EventQueue::new(
+                "test_event_await_sim",
+                "redis://127.0.0.1"
+            );
+
+            for _ in 0..2 {
+                let event = thread_interface.dequeue_blocking(10).unwrap();
+                let event = event.get_event();
+                
+                assert_eq!(event.get_payload(), Some(String::from("ping")));
+
+                let response = ServiceEvent::new_response(&event, "await_response", Some(String::from("pong")));
+                thread_interface.enqueue_response(&response).unwrap();
+            }
+        });
+
+        let event_thread = thread::spawn(|| {
+            let mut thread_interface = EventQueue::new(
+                "test_event_await_sim",
+                "redis://127.0.0.1"
+            );
+
+            let event = ServiceEvent::new(
+                1,
+                "await_test",
+                Some(String::from("ping"))
+            );
+
+            let response = thread_interface.await_response(&event).unwrap();
+            let response = response.get_event();
+
+            assert_eq!(response.get_action(), "await_response");
+            assert_eq!(response.get_payload(), Some(String::from("pong")));
+            assert_eq!(response.get_uuid(), event.get_uuid());
+        });
+
+        let event = ServiceEvent::new(
+            1,
+            "await_test",
+            Some(String::from("ping"))
+        );
+
+        let response = interface.await_response(&event).unwrap();
+        let response = response.get_event();
+
+        assert_eq!(response.get_action(), "await_response");
+        assert_eq!(response.get_payload(), Some(String::from("pong")));
+        assert_eq!(response.get_uuid(), event.get_uuid());
+
+        answer_thread.join().unwrap();
+        event_thread.join().unwrap();
     }
 
     #[test]
