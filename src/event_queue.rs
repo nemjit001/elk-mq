@@ -1,5 +1,7 @@
 mod service_event;
 
+use crate::name_generator;
+
 use std::{ time, collections::HashMap };
 use regex::Regex;
 use lazy_static::lazy_static;
@@ -42,23 +44,23 @@ impl TimestampedEvent {
 
 pub struct EventQueue {
     redis_client: Client,
-    queue_name: String,
-    stream_name: String,
+    message_queue_name: String,
+    event_stream_name: String,
     response_stream_name: String
 }
 
 impl EventQueue {
     pub fn new(queue_name: &str, connection_url: &str) -> Self {
         let redis_client = redis::Client::open(connection_url).unwrap();
-        let redis_queue_name = std::format!("{}(queue)", queue_name);
-        let redis_event_stream_name = std::format!("{}(event_stream)", queue_name);
-        let redis_response_stream_name = std::format!("{}(response_stream)", queue_name);
+        let message_queue_name = name_generator::generate_message_queue_name(queue_name);
+        let event_stream_name = name_generator::generate_event_stream_name(queue_name);
+        let response_stream_name = name_generator::generate_response_stream_name(queue_name);
 
         EventQueue {
             redis_client,
-            queue_name: redis_queue_name,
-            stream_name: redis_event_stream_name,
-            response_stream_name: redis_response_stream_name
+            message_queue_name,
+            event_stream_name,
+            response_stream_name
         }
     }
 
@@ -86,7 +88,7 @@ impl EventQueue {
 
     fn get_service_event_by_key(&self, connection: &mut Connection, event_key: &str, event_type: &str) -> EventQueueResult<ServiceEvent> {
         let event_data_list: Vec<StreamEntry> = match connection.xrange_count(
-            &self.stream_name,
+            &self.event_stream_name,
             event_key,
             event_key,
             1
@@ -145,7 +147,7 @@ impl EventQueue {
         };
 
         let event_key: String = match connection.xadd(
-            &self.stream_name,
+            &self.event_stream_name,
             "*",
             &[("event", &event_as_json)]
         ) {
@@ -154,7 +156,7 @@ impl EventQueue {
         };
 
         if let Err(error) = connection.lpush::<_, _, ()>(
-            &self.queue_name,
+            &self.message_queue_name,
             &event_key
         ) {
             return Err(EventQueueError::EnqueueError(error.to_string()));
@@ -166,7 +168,7 @@ impl EventQueue {
     pub fn dequeue(&mut self) -> EventQueueResult<TimestampedEvent> {
         let mut connection = self.setup_connection()?;
 
-        let event_key: String = match connection.rpop(&self.queue_name, None) {
+        let event_key: String = match connection.rpop(&self.message_queue_name, None) {
             Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
             Ok(key) => match key {
                 None => return Err(EventQueueError::EmptyQueue),
@@ -184,7 +186,7 @@ impl EventQueue {
         let mut connection = self.setup_connection()?;
 
         let event_kvp: (String, String) = match connection.brpop(
-            &self.queue_name, 
+            &self.message_queue_name, 
             timeout.into()
         ) {
             Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
@@ -212,7 +214,7 @@ impl EventQueue {
 
         let uuid_string = Uuid::from_u128(event.get_uuid()).to_string();
         let response_key: String = match connection.xadd(
-            &self.stream_name,
+            &self.event_stream_name,
             "*",
             &[("response", &event_as_json)]
         ) {
