@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 /// - The [`action`] is an arbitrary string
 /// - The [`payload`] is serialized data in an agreed upon format (commonly JSON)
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ServiceEvent {
     request_uuid: u128,
     timeout: u16,
@@ -74,10 +74,7 @@ impl ServiceEvent {
     }
 
     pub fn get_payload(&self) -> Option<String> {
-        match &self.payload {
-            None => None,
-            Some(str) => Some(str.to_string())
-        }
+        self.payload.as_ref().map(| str | str.to_string())
     }
 }
 

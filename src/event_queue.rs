@@ -8,7 +8,7 @@ use redis::{Commands, Connection, Client};
 pub use service_event::ServiceEvent;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum EventQueueError {
     ConnectionError(String),
     JSONDumpError(String),
@@ -21,7 +21,7 @@ pub enum EventQueueError {
 
 pub type EventQueueResult<T> = Result<T, EventQueueError>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct TimestampedEvent(u64, ServiceEvent);
 
 impl TimestampedEvent {
@@ -81,8 +81,8 @@ impl EventQueue {
     fn get_service_event_by_key(&self, connection: &mut Connection, event_key: &str, event_type: &str) -> EventQueueResult<ServiceEvent> {
         let event_data_list: Vec<HashMap<String, HashMap<String, String>>> = match connection.xrange_count(
             &self.stream_name,
-            &event_key,
-            &event_key,
+            event_key,
+            event_key,
             1
         ) {
             Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
@@ -102,7 +102,7 @@ impl EventQueue {
             }
         };
 
-        let event: ServiceEvent = match serde_json::from_str(&event) {
+        let event: ServiceEvent = match serde_json::from_str(event) {
             Err(error) => return Err(EventQueueError::JSONParseError(error.to_string())),
             Ok(event) => event
         };
@@ -188,7 +188,7 @@ impl EventQueue {
             }
         };
 
-        let event_key = event_kvp.1.clone();
+        let event_key = event_kvp.1;
 
         let event = self.get_service_event_by_key(&mut connection, &event_key, "event")?;
         let timestamp = Self::extract_timestamp_from_event_key(&event_key);
@@ -245,7 +245,7 @@ impl EventQueue {
             };
 
             // if no new responses are found, we continue with polling
-            if new_responses.len() == 0 {
+            if new_responses.is_empty() {
                 current_time = time::Instant::now();
                 continue;
             }
@@ -296,7 +296,7 @@ impl EventQueue {
             }
 
             // break polling if a response key is found
-            if let Some(_) = response_key {
+            if response_key.is_some() {
                 break;
             }
 
