@@ -21,6 +21,12 @@ pub enum EventQueueError {
 
 pub type EventQueueResult<T> = Result<T, EventQueueError>;
 
+type EventId = String;
+type SerializedEventData = String;
+type EventMap = HashMap<EventId, SerializedEventData>;
+type StreamEntry = HashMap<String, EventMap>;
+type StreamMap = HashMap<String, Vec<StreamEntry>>;
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct TimestampedEvent(u64, ServiceEvent);
 
@@ -79,7 +85,7 @@ impl EventQueue {
     }
 
     fn get_service_event_by_key(&self, connection: &mut Connection, event_key: &str, event_type: &str) -> EventQueueResult<ServiceEvent> {
-        let event_data_list: Vec<HashMap<String, HashMap<String, String>>> = match connection.xrange_count(
+        let event_data_list: Vec<StreamEntry> = match connection.xrange_count(
             &self.stream_name,
             event_key,
             event_key,
@@ -111,7 +117,7 @@ impl EventQueue {
     }
 
     fn get_last_response_id(&self, connection: &mut Connection) -> EventQueueResult<String> {
-        let last_response: Vec<HashMap<String, HashMap<String, String>>> = match connection.xrevrange_count(&self.response_stream_name, "+", "-", 1) {
+        let last_response: Vec<StreamEntry> = match connection.xrevrange_count(&self.response_stream_name, "+", "-", 1) {
             Err(error) => return Err(EventQueueError::DequeueError(error.to_string())),
             Ok(response) => response
         };
@@ -236,7 +242,7 @@ impl EventQueue {
 
         while start_time + time::Duration::new(timeout.into(), 0) >= current_time {
             // read new response entries from last seen ID onward
-            let new_responses: Vec<HashMap<String, Vec<HashMap<String, HashMap<String, String>>>>> = match connection.xread(
+            let new_responses: Vec<StreamMap> = match connection.xread(
                 &[&self.response_stream_name],
                 &[&last_response_id]
             ) {
@@ -423,7 +429,7 @@ mod tests {
 
             assert_eq!(event.get_payload(), Some(String::from("ping")));
 
-            let response = ServiceEvent::new_response(&event, "await_response", Some(String::from("pong")));
+            let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
             thread_interface.enqueue_response(&response).unwrap();
         });
 
@@ -456,7 +462,7 @@ mod tests {
                 
                 assert_eq!(event.get_payload(), Some(String::from("ping")));
 
-                let response = ServiceEvent::new_response(&event, "await_response", Some(String::from("pong")));
+                let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
                 thread_interface.enqueue_response(&response).unwrap();
             }
         });
