@@ -1,13 +1,12 @@
 mod service_event;
 
+pub use service_event::ServiceEvent;
 use crate::name_generator;
 
 use std::{ time, collections::HashMap };
 use regex::Regex;
 use lazy_static::lazy_static;
 use redis::{Commands, Connection, Client};
-
-pub use service_event::ServiceEvent;
 use uuid::Uuid;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -22,6 +21,7 @@ pub enum EventQueueError {
 }
 
 pub type EventQueueResult<T> = Result<T, EventQueueError>;
+pub type Timestamp = u64;
 
 type EventId = String;
 type SerializedEventData = String;
@@ -30,10 +30,10 @@ type StreamEntry = HashMap<String, EventMap>;
 type StreamMap = HashMap<String, Vec<StreamEntry>>;
 
 #[derive(Debug, Eq, PartialEq)]
-pub struct TimestampedEvent(u64, ServiceEvent);
+pub struct TimestampedEvent(Timestamp, ServiceEvent);
 
 impl TimestampedEvent {
-    pub fn get_timestamp(&self) -> u64 {
+    pub fn get_timestamp(&self) -> Timestamp {
         self.0
     }
 
@@ -138,7 +138,7 @@ impl EventQueue {
         Ok(id)
     }
 
-    pub fn enqueue(&mut self, event: &ServiceEvent) -> EventQueueResult<()> {
+    pub fn enqueue(&mut self, event: &ServiceEvent) -> EventQueueResult<Timestamp> {
         let mut connection = self.setup_connection()?;
 
         let event_as_json = match serde_json::to_string(&event) {
@@ -162,7 +162,9 @@ impl EventQueue {
             return Err(EventQueueError::EnqueueError(error.to_string()));
         }
 
-        Ok(())
+        let timestamp = Self::extract_timestamp_from_event_key(&event_key);
+
+        Ok(timestamp)
     }
 
     pub fn dequeue(&mut self) -> EventQueueResult<TimestampedEvent> {
