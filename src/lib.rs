@@ -1,6 +1,9 @@
 mod name_generator;
 mod event_queue;
 
+#[cfg(feature="python_bindings")]
+mod python_bindings;
+
 pub use event_queue::{ EventQueue, EventQueueError, EventQueueResult, ServiceEvent, Timestamp, TimestampedEvent };
 
 #[cfg(test)]
