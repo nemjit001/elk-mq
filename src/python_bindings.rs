@@ -14,7 +14,7 @@
 
 use std::cell::RefCell;
 use uuid::Uuid;
-use cpython::{ py_class, py_module_initializer, PyResult, PyNone, PyDict };
+use cpython::{ py_class, py_module_initializer, PyResult, PyErr, PyNone, PyDict, exc::RuntimeError };
 
 py_class!(class ServiceEvent | py | {
     data event: crate::ServiceEvent;
@@ -91,14 +91,21 @@ py_class!(class EventQueue | py | {
     def enqueue(&self, event: ServiceEvent) -> PyResult<u64> {
         let mut queue = self.event_queue(py).borrow_mut();
 
-        let timestamp = queue.enqueue(event.event(py)).unwrap();
+        let timestamp = match queue.enqueue(event.event(py)) {
+            Ok(timestamp) => timestamp,
+            Err(error) => return Err(PyErr::new::<RuntimeError, _>(py, format!("{:?}", error)))
+        };
+
         Ok(timestamp)
     }
 
     def dequeue(&self) -> PyResult<(u64, ServiceEvent)> {
         let mut queue = self.event_queue(py).borrow_mut();
 
-        let timestamped_event = queue.dequeue().unwrap();
+        let timestamped_event = match queue.dequeue() {
+            Ok(event) => event,
+            Err(error) => return Err(PyErr::new::<RuntimeError, _>(py, format!("{:?}", error)))
+        };
 
         let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
@@ -108,7 +115,11 @@ py_class!(class EventQueue | py | {
     def dequeue_blocking(&self, timeout: u16) -> PyResult<(u64, ServiceEvent)> {
         let mut queue = self.event_queue(py).borrow_mut();
 
-        let timestamped_event = queue.dequeue_blocking(timeout).unwrap();
+        let timestamped_event = match queue.dequeue_blocking(timeout) {
+            Ok(event) => event,
+            Err(error) => return Err(PyErr::new::<RuntimeError, _>(py, format!("{:?}", error)))
+        };
+
         let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
         Ok((timestamped_event.timestamp(), py_event)) 
@@ -117,7 +128,9 @@ py_class!(class EventQueue | py | {
     def enqueue_response(&self, event: ServiceEvent) -> PyResult<PyNone> {
         let mut queue = self.event_queue(py).borrow_mut();
 
-        queue.enqueue_response(event.event(py)).unwrap();
+        if let Err(error) = queue.enqueue_response(event.event(py)) {
+            return Err(PyErr::new::<RuntimeError, _>(py, format!("{:?}", error)));
+        }
 
         Ok(PyNone)
     }
@@ -125,7 +138,10 @@ py_class!(class EventQueue | py | {
     def await_response(&self, event: ServiceEvent) -> PyResult<(u64, ServiceEvent)> {
         let mut queue = self.event_queue(py).borrow_mut();
 
-        let timestamped_event = queue.await_response(event.event(py)).unwrap();
+        let timestamped_event = match queue.await_response(event.event(py)) {
+            Ok(event) => event,
+            Err(error) => return Err(PyErr::new::<RuntimeError, _>(py, format!("{:?}", error)))
+        };
 
         let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
