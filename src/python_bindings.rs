@@ -100,18 +100,18 @@ py_class!(class EventQueue | py | {
 
         let timestamped_event = queue.dequeue().unwrap();
 
-        let py_event = ServiceEvent::create_instance(py, timestamped_event.get_event().clone())?;
+        let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
-        Ok((timestamped_event.get_timestamp(), py_event))
+        Ok((timestamped_event.timestamp(), py_event))
     }
 
     def dequeue_blocking(&self, timeout: u16) -> PyResult<(u64, ServiceEvent)> {
         let mut queue = self.event_queue(py).borrow_mut();
 
         let timestamped_event = queue.dequeue_blocking(timeout).unwrap();
-        let py_event = ServiceEvent::create_instance(py, timestamped_event.get_event().clone())?;
+        let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
-        Ok((timestamped_event.get_timestamp(), py_event)) 
+        Ok((timestamped_event.timestamp(), py_event)) 
     }
 
     def enqueue_response(&self, event: ServiceEvent) -> PyResult<PyNone> {
@@ -127,9 +127,9 @@ py_class!(class EventQueue | py | {
 
         let timestamped_event = queue.await_response(event.event(py)).unwrap();
 
-        let py_event = ServiceEvent::create_instance(py, timestamped_event.get_event().clone())?;
+        let py_event = ServiceEvent::create_instance(py, timestamped_event.event().clone())?;
 
-        Ok((timestamped_event.get_timestamp(), py_event))
+        Ok((timestamped_event.timestamp(), py_event))
     }
 });
 

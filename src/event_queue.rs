@@ -47,11 +47,11 @@ type StreamMap = HashMap<String, Vec<StreamEntry>>;
 pub struct TimestampedEvent(Timestamp, ServiceEvent);
 
 impl TimestampedEvent {
-    pub fn get_timestamp(&self) -> Timestamp {
+    pub fn timestamp(&self) -> Timestamp {
         self.0
     }
 
-    pub fn get_event(&self) -> &ServiceEvent {
+    pub fn event(&self) -> &ServiceEvent {
         &self.1
     }
 }
@@ -373,7 +373,7 @@ mod tests {
 
         let result = interface.dequeue().unwrap();
 
-        assert_eq!(&event, result.get_event());
+        assert_eq!(&event, result.event());
     }
 
     #[test]
@@ -406,8 +406,8 @@ mod tests {
 
         handle.join().unwrap();
 
-        assert_eq!(event_uuid, result.get_event().uuid());
-        assert_eq!(result.get_event().payload(), Some(String::from("Payload!")));
+        assert_eq!(event_uuid, result.event().uuid());
+        assert_eq!(result.event().payload(), Some(String::from("Payload!")));
     }
 
     #[test]
@@ -441,7 +441,7 @@ mod tests {
             );
 
             let event = thread_interface.dequeue_blocking(10).unwrap();
-            let event = event.get_event();
+            let event = event.event();
 
             println!("{:#?}", event);
 
@@ -452,7 +452,7 @@ mod tests {
         });
 
         let response = interface.await_response(&event).unwrap();
-        let response = response.get_event();
+        let response = response.event();
 
         join_handle.join().unwrap();
         
@@ -476,7 +476,7 @@ mod tests {
 
             for _ in 0..2 {
                 let event = thread_interface.dequeue_blocking(10).unwrap();
-                let event = event.get_event();
+                let event = event.event();
                 
                 assert_eq!(event.payload(), Some(String::from("ping")));
 
@@ -498,7 +498,7 @@ mod tests {
             );
 
             let response = thread_interface.await_response(&event).unwrap();
-            let response = response.get_event();
+            let response = response.event();
 
             assert_eq!(response.action(), "await_response");
             assert_eq!(response.payload(), Some(String::from("pong")));
@@ -512,7 +512,7 @@ mod tests {
         );
 
         let response = interface.await_response(&event).unwrap();
-        let response = response.get_event();
+        let response = response.event();
 
         assert_eq!(response.action(), "await_response");
         assert_eq!(response.payload(), Some(String::from("pong")));

@@ -34,7 +34,7 @@ mod tests {
 
         let timestamped_event: TimestampedEvent = queue.dequeue().unwrap();
 
-        assert_eq!(timestamp, timestamped_event.get_timestamp());
-        assert_eq!(&event, timestamped_event.get_event());
+        assert_eq!(timestamp, timestamped_event.timestamp());
+        assert_eq!(&event, timestamped_event.event());
     }
 }
