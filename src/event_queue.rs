@@ -214,7 +214,7 @@ impl EventQueue {
             Ok(json) => json
         };
 
-        let uuid_string = Uuid::from_u128(event.get_uuid()).to_string();
+        let uuid_string = Uuid::from_u128(event.uuid()).to_string();
         let response_key: String = match connection.xadd(
             &self.event_stream_name,
             "*",
@@ -235,8 +235,8 @@ impl EventQueue {
         let mut connection = self.setup_connection()?;
 
         let start_time = time::Instant::now();
-        let timeout = event.get_timeout();
-        let target_uuid_string = Uuid::from_u128(event.get_uuid()).to_string();
+        let timeout = event.timeout();
+        let target_uuid_string = Uuid::from_u128(event.uuid()).to_string();
 
         let mut current_time = start_time;
         let mut response_key: Option<String> = None;
@@ -375,7 +375,7 @@ mod tests {
             Some(String::from("Payload!"))
         );
 
-        let event_uuid = event.get_uuid();
+        let event_uuid = event.uuid();
 
         let handle = thread::spawn(move || {
             thread::sleep(Duration::from_secs(2));
@@ -392,8 +392,8 @@ mod tests {
 
         handle.join().unwrap();
 
-        assert_eq!(event_uuid, result.get_event().get_uuid());
-        assert_eq!(result.get_event().get_payload(), Some(String::from("Payload!")));
+        assert_eq!(event_uuid, result.get_event().uuid());
+        assert_eq!(result.get_event().payload(), Some(String::from("Payload!")));
     }
 
     #[test]
@@ -431,7 +431,7 @@ mod tests {
 
             println!("{:#?}", event);
 
-            assert_eq!(event.get_payload(), Some(String::from("ping")));
+            assert_eq!(event.payload(), Some(String::from("ping")));
 
             let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
             thread_interface.enqueue_response(&response).unwrap();
@@ -442,9 +442,9 @@ mod tests {
 
         join_handle.join().unwrap();
         
-        assert_eq!(response.get_action(), "await_response");
-        assert_eq!(response.get_payload(), Some(String::from("pong")));
-        assert_eq!(response.get_uuid(), event.get_uuid());
+        assert_eq!(response.action(), "await_response");
+        assert_eq!(response.payload(), Some(String::from("pong")));
+        assert_eq!(response.uuid(), event.uuid());
     }
 
     #[test]
@@ -464,7 +464,7 @@ mod tests {
                 let event = thread_interface.dequeue_blocking(10).unwrap();
                 let event = event.get_event();
                 
-                assert_eq!(event.get_payload(), Some(String::from("ping")));
+                assert_eq!(event.payload(), Some(String::from("ping")));
 
                 let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
                 thread_interface.enqueue_response(&response).unwrap();
@@ -486,9 +486,9 @@ mod tests {
             let response = thread_interface.await_response(&event).unwrap();
             let response = response.get_event();
 
-            assert_eq!(response.get_action(), "await_response");
-            assert_eq!(response.get_payload(), Some(String::from("pong")));
-            assert_eq!(response.get_uuid(), event.get_uuid());
+            assert_eq!(response.action(), "await_response");
+            assert_eq!(response.payload(), Some(String::from("pong")));
+            assert_eq!(response.uuid(), event.uuid());
         });
 
         let event = ServiceEvent::new(
@@ -500,9 +500,9 @@ mod tests {
         let response = interface.await_response(&event).unwrap();
         let response = response.get_event();
 
-        assert_eq!(response.get_action(), "await_response");
-        assert_eq!(response.get_payload(), Some(String::from("pong")));
-        assert_eq!(response.get_uuid(), event.get_uuid());
+        assert_eq!(response.action(), "await_response");
+        assert_eq!(response.payload(), Some(String::from("pong")));
+        assert_eq!(response.uuid(), event.uuid());
 
         answer_thread.join().unwrap();
         event_thread.join().unwrap();

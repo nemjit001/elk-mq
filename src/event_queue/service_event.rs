@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 /// - The [`action`] is an arbitrary string
 /// - The [`payload`] is serialized data in an agreed upon format (commonly JSON)
 
-#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ServiceEvent {
     request_uuid: u128,
     timeout: u16,
@@ -61,19 +61,19 @@ impl ServiceEvent {
         new_event
     }
 
-    pub fn get_uuid(&self) -> u128 {
+    pub fn uuid(&self) -> u128 {
         self.request_uuid
     }
 
-    pub fn get_timeout(&self) -> u16 {
+    pub fn timeout(&self) -> u16 {
         self.timeout
     }
 
-    pub fn get_action(&self) -> &str {
+    pub fn action(&self) -> &str {
         &self.action
     }
 
-    pub fn get_payload(&self) -> Option<String> {
+    pub fn payload(&self) -> Option<String> {
         self.payload.as_ref().map(| str | str.to_string())
     }
 }
@@ -90,9 +90,9 @@ mod tests {
             None
         );
 
-        assert_eq!(event.get_action(), "test_event_create");
-        assert_eq!(event.get_payload(), None);
-        assert_eq!(event.get_timeout(), 10);
+        assert_eq!(event.action(), "test_event_create");
+        assert_eq!(event.payload(), None);
+        assert_eq!(event.timeout(), 10);
     }
     
     #[test]
@@ -109,6 +109,6 @@ mod tests {
             None
         );
 
-        assert_eq!(event_a.get_uuid(), event_b.get_uuid());
+        assert_eq!(event_a.uuid(), event_b.uuid());
     }
 }
