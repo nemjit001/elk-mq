@@ -5,6 +5,7 @@
 target/
 
 # Python build system ignores
+dist/
 build/
 venv/
 *.egg-info/

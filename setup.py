@@ -9,8 +9,5 @@ setup(
             binding=Binding.RustCPython
         )
     ],
-    packages=[
-        "src"
-    ],
     zip_safe=False
 )
