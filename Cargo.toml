@@ -1,12 +1,23 @@
 [package]
 name = "elk-mq"
 version = "0.1.0"
-edition = "2021"
-authors = [
-    "Tijmen Verhoef<tijmenmenno@gmail.com>"
-]
+description = "A Message Queue implementation in rust, using Redis as a communication medium."
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2021"
+rust-version = "1.65"
+authors = [
+    "Tijmen Verhoef <tijmenmenno@gmail.com>"
+]
+readme = "README.md"
+repository = "https://github.com/nemjit001/elk-mq"
+license = "Apache-2.0"
+license-file = "LICENSE"
+
+[lib]
+crate-type = [ "lib", "staticlib", "cdylib" ]
+
+[features]
+python_bindings = [ "cpython" ]
 
 [dependencies]
 redis = { version="0.22" }
@@ -15,3 +26,4 @@ serde_json = { version="1.0" }
 uuid = { version="1.2", features=[ "v4" ] }
 regex = { version="1.7" }
 lazy_static = { version="1.4" }
+cpython = { version="0.7", features=["extension-module"], optional=true }

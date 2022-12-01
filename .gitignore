@@ -1,1 +1,11 @@
-/target
+# VsCode ignores
+.vscode/
+
+# Rust ignores
+target/
+
+# Python build system ignores
+build/
+venv/
+*.egg-info/
+*.pyd

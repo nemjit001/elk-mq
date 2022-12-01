@@ -1,3 +1,17 @@
+//  Copyright 2022 Tijmen Menno Verhoef
+
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+
+//      http://www.apache.org/licenses/LICENSE-2.0
+
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 mod service_event;
 
 pub use service_event::ServiceEvent;
@@ -33,11 +47,11 @@ type StreamMap = HashMap<String, Vec<StreamEntry>>;
 pub struct TimestampedEvent(Timestamp, ServiceEvent);
 
 impl TimestampedEvent {
-    pub fn get_timestamp(&self) -> Timestamp {
+    pub fn timestamp(&self) -> Timestamp {
         self.0
     }
 
-    pub fn get_event(&self) -> &ServiceEvent {
+    pub fn event(&self) -> &ServiceEvent {
         &self.1
     }
 }
@@ -214,7 +228,7 @@ impl EventQueue {
             Ok(json) => json
         };
 
-        let uuid_string = Uuid::from_u128(event.get_uuid()).to_string();
+        let uuid_string = Uuid::from_u128(event.uuid()).to_string();
         let response_key: String = match connection.xadd(
             &self.event_stream_name,
             "*",
@@ -235,8 +249,8 @@ impl EventQueue {
         let mut connection = self.setup_connection()?;
 
         let start_time = time::Instant::now();
-        let timeout = event.get_timeout();
-        let target_uuid_string = Uuid::from_u128(event.get_uuid()).to_string();
+        let timeout = event.timeout();
+        let target_uuid_string = Uuid::from_u128(event.uuid()).to_string();
 
         let mut current_time = start_time;
         let mut response_key: Option<String> = None;
@@ -359,7 +373,7 @@ mod tests {
 
         let result = interface.dequeue().unwrap();
 
-        assert_eq!(&event, result.get_event());
+        assert_eq!(&event, result.event());
     }
 
     #[test]
@@ -375,7 +389,7 @@ mod tests {
             Some(String::from("Payload!"))
         );
 
-        let event_uuid = event.get_uuid();
+        let event_uuid = event.uuid();
 
         let handle = thread::spawn(move || {
             thread::sleep(Duration::from_secs(2));
@@ -392,8 +406,8 @@ mod tests {
 
         handle.join().unwrap();
 
-        assert_eq!(event_uuid, result.get_event().get_uuid());
-        assert_eq!(result.get_event().get_payload(), Some(String::from("Payload!")));
+        assert_eq!(event_uuid, result.event().uuid());
+        assert_eq!(result.event().payload(), Some(String::from("Payload!")));
     }
 
     #[test]
@@ -427,24 +441,24 @@ mod tests {
             );
 
             let event = thread_interface.dequeue_blocking(10).unwrap();
-            let event = event.get_event();
+            let event = event.event();
 
             println!("{:#?}", event);
 
-            assert_eq!(event.get_payload(), Some(String::from("ping")));
+            assert_eq!(event.payload(), Some(String::from("ping")));
 
             let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
             thread_interface.enqueue_response(&response).unwrap();
         });
 
         let response = interface.await_response(&event).unwrap();
-        let response = response.get_event();
+        let response = response.event();
 
         join_handle.join().unwrap();
         
-        assert_eq!(response.get_action(), "await_response");
-        assert_eq!(response.get_payload(), Some(String::from("pong")));
-        assert_eq!(response.get_uuid(), event.get_uuid());
+        assert_eq!(response.action(), "await_response");
+        assert_eq!(response.payload(), Some(String::from("pong")));
+        assert_eq!(response.uuid(), event.uuid());
     }
 
     #[test]
@@ -462,9 +476,9 @@ mod tests {
 
             for _ in 0..2 {
                 let event = thread_interface.dequeue_blocking(10).unwrap();
-                let event = event.get_event();
+                let event = event.event();
                 
-                assert_eq!(event.get_payload(), Some(String::from("ping")));
+                assert_eq!(event.payload(), Some(String::from("ping")));
 
                 let response = ServiceEvent::new_response(event, "await_response", Some(String::from("pong")));
                 thread_interface.enqueue_response(&response).unwrap();
@@ -484,11 +498,11 @@ mod tests {
             );
 
             let response = thread_interface.await_response(&event).unwrap();
-            let response = response.get_event();
+            let response = response.event();
 
-            assert_eq!(response.get_action(), "await_response");
-            assert_eq!(response.get_payload(), Some(String::from("pong")));
-            assert_eq!(response.get_uuid(), event.get_uuid());
+            assert_eq!(response.action(), "await_response");
+            assert_eq!(response.payload(), Some(String::from("pong")));
+            assert_eq!(response.uuid(), event.uuid());
         });
 
         let event = ServiceEvent::new(
@@ -498,11 +512,11 @@ mod tests {
         );
 
         let response = interface.await_response(&event).unwrap();
-        let response = response.get_event();
+        let response = response.event();
 
-        assert_eq!(response.get_action(), "await_response");
-        assert_eq!(response.get_payload(), Some(String::from("pong")));
-        assert_eq!(response.get_uuid(), event.get_uuid());
+        assert_eq!(response.action(), "await_response");
+        assert_eq!(response.payload(), Some(String::from("pong")));
+        assert_eq!(response.uuid(), event.uuid());
 
         answer_thread.join().unwrap();
         event_thread.join().unwrap();
