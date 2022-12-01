@@ -10,6 +10,8 @@ authors = [
 ]
 readme = "README.md"
 repository = "https://github.com/nemjit001/elk-mq"
+homepage = "https://github.com/nemjit001/elk-mq"
+documentation = "https://github.com/nemjit001/elk-mq"
 license = "Apache-2.0"
 
 [lib]
