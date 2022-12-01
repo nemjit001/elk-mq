@@ -1,10 +1,19 @@
 [package]
 name = "elk-mq"
 version = "0.1.0"
+description = ""
+
 edition = "2021"
+rust-version = "1.65"
 authors = [
-    "Tijmen Verhoef<tijmenmenno@gmail.com>"
+    "Tijmen Verhoef <tijmenmenno@gmail.com>"
 ]
+readme = "README.md"
+repository = "https://github.com/nemjit001/elk-mq"
+homepage = ""
+documentation = ""
+license = "Apache-2.0"
+license-file = "LICENSE"
 
 [lib]
 crate-type = [ "lib", "staticlib", "cdylib" ]
