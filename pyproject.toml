@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-rust"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elk_mq"
+version = "0.1.0"
+author = "Tijmen Verhoef"
