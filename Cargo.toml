@@ -27,4 +27,8 @@ serde_json = { version="1.0" }
 uuid = { version="1.2", features=[ "v4" ] }
 regex = { version="1.7" }
 lazy_static = { version="1.4" }
+<<<<<<< Updated upstream
 cpython = { path="C:/Users/Tijmen/Documents/My Stuff/repositories/rust-cpython", version="0.7", features=[ "extension-module" ], optional=true }
+=======
+cpython = { version="0.7", features=[ "extension-module" ], optional=true }
+>>>>>>> Stashed changes
