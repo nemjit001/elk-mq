@@ -5,4 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "elk_mq"
 version = "0.1.0"
-author = "Tijmen Verhoef"
+description = ""
+
+requires-python = ">=3"
+authors = [
+    { name = "Tijmen Verhoef", email = "tijmenmenno@gmail.com" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
