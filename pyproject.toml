@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "elk_mq"
 version = "0.1.0"
-description = ""
+description = "A Message Queue implementation in rust, available as a python extension module"
 
 requires-python = ">=3"
 authors = [
