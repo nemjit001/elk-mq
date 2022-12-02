@@ -14,6 +14,11 @@ homepage = "https://github.com/nemjit001/elk-mq"
 documentation = "https://github.com/nemjit001/elk-mq"
 license = "Apache-2.0"
 
+categories = [
+    "concurrency",
+    "asynchronous"
+]
+
 exclude = [
     "pyproject.toml",
     "setup.py"

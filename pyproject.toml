@@ -14,6 +14,13 @@ authors = [
 readme = "README.md"
 license = { text = "Apache-2.0" }
 
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: Apache Software License",
+]
+
 [project.urls]
 repository = "https://github.com/nemjit001/elk-mq"
 homepage = "https://github.com/nemjit001/elk-mq"
