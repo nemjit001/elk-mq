@@ -13,3 +13,13 @@ authors = [
 ]
 readme = "README.md"
 license = { file = "LICENSE" }
+
+[project.urls]
+repository = "https://github.com/nemjit001/elk-mq"
+homepage = "https://github.com/nemjit001/elk-mq"
+
+[tool.poetry]
+include = [
+    "Cargo.toml",
+    "src/*"
+]

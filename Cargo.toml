@@ -10,6 +10,8 @@ authors = [
 ]
 readme = "README.md"
 repository = "https://github.com/nemjit001/elk-mq"
+homepage = "https://github.com/nemjit001/elk-mq"
+documentation = "https://github.com/nemjit001/elk-mq"
 license = "Apache-2.0"
 
 [lib]
@@ -25,4 +27,4 @@ serde_json = { version="1.0" }
 uuid = { version="1.2", features=[ "v4" ] }
 regex = { version="1.7" }
 lazy_static = { version="1.4" }
-cpython = { version="0.7", features=["extension-module"], optional=true }
+cpython = { git="https://github.com/nemjit001/rust-cpython", version="0.7", features=[ "extension-module" ], optional=true }
