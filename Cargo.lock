@@ -42,6 +42,7 @@ dependencies = [
 [[package]]
 name = "cpython"
 version = "0.7.1"
+source = "git+https://github.com/nemjit001/rust-cpython#b4d6b3006a2c5d9f0d5a2961d4db1f6bf025b6a0"
 dependencies = [
  "libc",
  "num-traits",
@@ -149,6 +150,7 @@ dependencies = [
 [[package]]
 name = "python3-sys"
 version = "0.7.1"
+source = "git+https://github.com/nemjit001/rust-cpython#b4d6b3006a2c5d9f0d5a2961d4db1f6bf025b6a0"
 dependencies = [
  "libc",
  "regex",
