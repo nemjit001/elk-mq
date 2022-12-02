@@ -12,7 +12,7 @@ authors = [
     { name = "Tijmen Verhoef", email = "tijmenmenno@gmail.com" }
 ]
 readme = "README.md"
-license = { file = "LICENSE" }
+license = { text = "Apache-2.0" }
 
 [project.urls]
 repository = "https://github.com/nemjit001/elk-mq"
