@@ -1,6 +1,6 @@
 [package]
 name = "elk-mq"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Message Queue implementation in rust, using Redis as a communication medium."
 
 edition = "2021"
@@ -13,6 +13,11 @@ repository = "https://github.com/nemjit001/elk-mq"
 homepage = "https://github.com/nemjit001/elk-mq"
 documentation = "https://github.com/nemjit001/elk-mq"
 license = "Apache-2.0"
+
+categories = [
+    "concurrency",
+    "asynchronous"
+]
 
 exclude = [
     "pyproject.toml",

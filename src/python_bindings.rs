@@ -29,7 +29,7 @@ py_class!(class ServiceEvent | py | {
         )
     }
 
-    def __dict__(&self) -> PyResult<PyDict> {
+    def to_dict(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
 
         let uuid_str = Uuid::from_u128(
